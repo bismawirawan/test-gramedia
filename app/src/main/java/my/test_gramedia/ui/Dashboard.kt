@@ -16,6 +16,7 @@ import my.test_gramedia.common.states.UiState
 import my.test_gramedia.databinding.ActivityDashboardBinding
 import my.test_gramedia.model.response.DataModel
 import my.test_gramedia.module.BaseActivity
+import my.test_gramedia.network.connection.NetworkConnectionLiveData
 import my.test_gramedia.ui.adapters.DashboardAdapter
 import my.test_gramedia.ui.dialogs.DialogDetail
 import my.test_gramedia.viewmodel.DataViewModel
@@ -148,7 +149,15 @@ class Dashboard : BaseActivity() {
             false
         })
 
-        viewModel.getData()
+        val networkconnection = NetworkConnectionLiveData(this)
+        observeNonNull(networkconnection) { isConnected ->
+            try {
+                viewModel.checkDataWithConnection(isConnected)
+            } catch (error: Exception) {
+                error.printStackTrace()
+            }
+
+        }
 
     }
 
@@ -195,7 +204,6 @@ class Dashboard : BaseActivity() {
     }
 
     private fun onClicked(data: DataModel) {
-        // Get favorite status for this product
         val isFavorite = viewModel.favoriteStatus.value?.get(data.id) ?: false
 
         val dialog = DialogDetail(

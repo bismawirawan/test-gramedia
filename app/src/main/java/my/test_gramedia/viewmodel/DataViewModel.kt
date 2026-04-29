@@ -43,6 +43,32 @@ class DataViewModel @Inject constructor(
         }
     }
 
+    fun checkDataWithConnection(isConnected: Boolean) {
+        dataState.sendAction(UiState.Loading)
+        viewModelScope.launch {
+            try {
+                if (isConnected) {
+                    fetchFromApiAndCache()
+                } else {
+                    val cachedData = repository.getCachedProducts()
+
+                    if (cachedData.isNotEmpty()) {
+                        dataState.sendAction(UiState.Success)
+                        dataResponse.postValue(cachedData)
+                        updateFavoriteStatuses(cachedData)
+                    } else {
+                        // Jika database kosong, hilangkan semua data
+                        dataState.sendAction(UiState.Success)
+                        dataResponse.postValue(emptyList())
+                        favoriteStatus.postValue(emptyMap())
+                    }
+                }
+            } catch (error: Exception) {
+                dataState.sendAction(UiState.Error(error.message ?: "Unknown error"))
+            }
+        }
+    }
+
     private suspend fun fetchFromApiAndCache() {
         try {
             val response = services.getData()
